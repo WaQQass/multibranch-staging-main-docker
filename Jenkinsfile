@@ -47,12 +47,13 @@ pipeline {
                         }
 
                         // Terraform Plan
+                        def planOutput = ''
                         dir('terraform') {
-                            sh 'terraform plan -out=tfplan'
+                            planOutput = sh(script: 'terraform plan -out=tfplan', returnStdout: true).trim()
                             sh 'terraform show -no-color tfplan > tfplan.txt'
                         }
 
-                        // Apply / Destroy based on parameters
+                        // Apply / Destroy based on parameters and branch
                         if (params.action == 'apply') {
                             if (!params.autoApprove) {
                                 def plan = readFile 'terraform/tfplan.txt'
@@ -102,10 +103,10 @@ pipeline {
                                 echo "Cloning GitHub repository with credentials to instance ${instanceId}"
                                 withCredentials([usernamePassword(credentialsId: 'git_lemp_new', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                                     sh """
-                                        aws ssm send-command \
-                                            --instance-ids ${instanceId} \
-                                            --document-name "AWS-RunShellScript" \
-                                            --parameters 'commands=["sudo apt-get install -y git", "git clone -b main https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/WaQQass/multibranch-staging-main-docker.git /home/ubuntu/tf.docker"]' \
+                                        aws ssm send-command \\
+                                            --instance-ids ${instanceId} \\
+                                            --document-name "AWS-RunShellScript" \\
+                                            --parameters 'commands=["sudo apt-get install -y git", "git clone -b main https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/WaQQass/multibranch-staging-main-docker.git /home/ubuntu/tf.docker"]' \\
                                             --region ${env.AWS_REGION}
                                     """
                                 }
@@ -114,13 +115,12 @@ pipeline {
                                 sleep 120 // Adjust sleep time if necessary
 
                                 // Install docker and docker-compose
-                                // Install docker and docker-compose
                                 echo "Installing docker and docker-compose on ${instanceId}"
                                 sh """
-                                    aws ssm send-command \
-                                    --instance-ids ${instanceId} \
-                                    --document-name "AWS-RunShellScript" \
-                                    --parameters '{"commands":["sudo apt update -y", "sudo apt install docker.io -y", "sleep 10", "sudo curl -L https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m) -o /usr/local/bin/docker-compose", "sudo chmod +x /usr/local/bin/docker-compose", "sudo docker-compose --version"]}' \
+                                    aws ssm send-command \\
+                                    --instance-ids ${instanceId} \\
+                                    --document-name "AWS-RunShellScript" \\
+                                    --parameters '{"commands":["sudo apt update -y", "sudo apt install docker.io -y", "sleep 10", "sudo curl -L https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m) -o /usr/local/bin/docker-compose", "sudo chmod +x /usr/local/bin/docker-compose", "sudo docker-compose --version"]}' \\
                                     --region ${env.AWS_REGION}
                                 """
 
@@ -130,10 +130,10 @@ pipeline {
                                 // Run Docker build and up commands
                                 echo "Building image and running containers on ${instanceId}"
                                 sh """
-                                    aws ssm send-command \
-                                        --instance-ids ${instanceId} \
-                                        --document-name "AWS-RunShellScript" \
-                                        --parameters 'commands=["cd /home/ubuntu/tf.docker && pwd && sudo docker-compose build && sleep 50 && sudo docker-compose up -d mysqldb && sleep 90 && sudo docker-compose up -d frontend_backend"]' \
+                                    aws ssm send-command \\
+                                        --instance-ids ${instanceId} \\
+                                        --document-name "AWS-RunShellScript" \\
+                                        --parameters 'commands=["cd /home/ubuntu/tf.docker && pwd && sudo docker-compose build && sleep 50 && sudo docker-compose up -d mysqldb && sleep 90 && sudo docker-compose up -d frontend_backend"]' \\
                                         --region ${env.AWS_REGION}
                                 """
                                 sleep 100 // Adjust sleep time if necessary
@@ -156,7 +156,13 @@ pipeline {
             }
             steps {
                 script {
+                    echo "Validating Docker Compose configuration:"
                     sh 'docker-compose -f docker-compose.yml config -q'
+                    
+                    // Show Terraform plan output for staging branch
+                    echo "Terraform Plan Output:"
+                    def planOutput = readFile 'terraform/tfplan.txt'
+                    echo "${planOutput}"
                 }
             }
         }
