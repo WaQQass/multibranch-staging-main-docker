@@ -114,14 +114,16 @@ pipeline {
                                 sleep 120 // Adjust sleep time if necessary
 
                                 // Install docker and docker-compose
+                                // Install docker and docker-compose
                                 echo "Installing docker and docker-compose on ${instanceId}"
-                                sh """
+                                  sh """
                                     aws ssm send-command \
-                                        --instance-ids ${instanceId} \
-                                        --document-name "AWS-RunShellScript" \
-                                        --parameters 'commands=[\\"sudo apt update -y\\", \\"sudo apt install docker.io -y\\", \\"sleep 10\\", \\"sudo curl -L https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m) -o /usr/local/bin/docker-compose\\", \\"sudo chmod +x /usr/local/bin/docker-compose\\", \\"sudo docker-compose --version\\"]' \
-                                        --region ${env.AWS_REGION}
-                                """
+                                    --instance-ids ${instanceId} \
+                                    --document-name "AWS-RunShellScript" \
+                                    --parameters '{"commands":["sudo apt update -y", "sudo apt install docker.io -y", "sleep 10", "sudo curl -L https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m) -o /usr/local/bin/docker-compose", "sudo chmod +x /usr/local/bin/docker-compose", "sudo docker-compose --version"]}' \
+                                    --region ${env.AWS_REGION}
+                                    """
+
 
                                 // Wait for the SSM command to complete
                                 sleep 160 // Adjust sleep time if necessary
