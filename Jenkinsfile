@@ -25,7 +25,7 @@ pipeline {
                     def assumeRoleOutput = sh(
                         script: """
                             aws sts assume-role \\
-                                --role-arn arn:aws:iam::372666185803:role/provisioned-role-for-jenkins-to-assume \\
+                                --role-arn arn:aws:iam::372666185803:role/proviosned-role-for-jenkins-to-assume \\
                                 --role-session-name jenkins-session \\
                                 --output json
                         """,
