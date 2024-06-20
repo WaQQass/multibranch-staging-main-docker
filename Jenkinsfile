@@ -39,7 +39,7 @@ pipeline {
                         "AWS_SESSION_TOKEN=${awsSessionToken}"
                     ]) {
                         // Checkout the GitHub repository using Jenkins Git credentials
-                        git credentialsId: 'git_lemp_new', url: 'https://github.com/WaQQass/tf.lemp_ec2_health_ssm_by_role.git', branch: 'main'
+                        git credentialsId: 'git_lemp_new', url: 'https://github.com/WaQQass/tf.docker', branch: 'main'
 
                         // Terraform Init
                         dir('terraform') {
@@ -119,7 +119,7 @@ pipeline {
                                     aws ssm send-command \
                                         --instance-ids ${instanceId} \
                                         --document-name "AWS-RunShellScript" \
-                                        --parameters 'commands=["sudo apt-get update", "sudo apt install docker.io -y", sleep 10, "sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose, sudo chmod +x /usr/local/bin/docker-compose, docker-compose --version"]' \
+                                        --parameters 'commands=["sudo apt update -y", "sudo apt install docker.io -y", sleep 10, "sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose, sudo chmod +x /usr/local/bin/docker-compose,sudo docker-compose --version"]' \
                                         --region ${env.AWS_REGION}
                                 """
 
@@ -135,6 +135,8 @@ pipeline {
                                         --parameters 'commands=["cd /home/ubuntu/tf.docker && sudo docker-compose build && sleep 50 && sudo docker-compose up -d mysqldb && sleep 90 && sudo docker-compose up -d frontend_backend"]' \
                                         --region ${env.AWS_REGION}
                                 """
+                                sleep 160 // Adjust sleep time if necessary
+
                             }
                         } else if (params.action == 'destroy') {
                             dir('terraform') {
