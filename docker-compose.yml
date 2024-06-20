@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  mysqldb:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: admin123
+      MYSQL_DATABASE: userinfo
+    networks:
+      - my-net-new
+
+  frontend_backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DB_HOST: mysqldb
+      DB_USER: root
+      DB_PASSWORD: admin123
+      DB_NAME: userinfo
+    ports:
+      - "5000:5000"
+    networks:
+      - my-net-new
+
+networks:
+  my-net-new:
+    driver: bridge
