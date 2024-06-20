@@ -36,7 +36,7 @@ resource "aws_instance" "web" {
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name  # Attach IAM role to instance
 
   tags = {
-    Name = "WebServerby_jenkins"
+    Name = "by_jenkins_docker"
   }
 }
 
@@ -61,6 +61,12 @@ resource "aws_security_group" "allow_ssh_http" {
   ingress {
     from_port   = 80
     to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 5000
+    to_port     = 5000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
