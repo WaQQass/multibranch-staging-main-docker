@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Data Interaction</title>
+</head>
+<body>
+    <h1>Data Interaction</h1>
+    <form action="/insert" method="post">
+        <label for="data">Insert Data:</label>
+        <input type="text" id="data" name="data">
+        <input type="submit" value="Insert">
+    </form>
+    <form action="/delete" method="post">
+        <label for="data_id">Delete Data ID:</label>
+        <input type="text" id="data_id" name="data_id">
+        <input type="submit" value="Delete">
+    </form>
+    <form action="/show" method="get">
+        <input type="submit" value="Show Data">
+    </form>
+</body>
+</html>
