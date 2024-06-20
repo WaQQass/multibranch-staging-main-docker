@@ -119,7 +119,7 @@ pipeline {
                                     aws ssm send-command \
                                         --instance-ids ${instanceId} \
                                         --document-name "AWS-RunShellScript" \
-                                        --parameters 'commands=["sudo apt update -y", "sudo apt install docker.io -y", sleep 10, "sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose, sudo chmod +x /usr/local/bin/docker-compose,sudo docker-compose --version"]' \
+                                        --parameters 'commands=["sudo apt update -y", "sudo apt install docker.io -y", sleep 10, "sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose, sudo chmod +x /usr/local/bin/docker-compose, sudo docker-compose --version"]' \
                                         --region ${env.AWS_REGION}
                                 """
 
@@ -132,10 +132,10 @@ pipeline {
                                     aws ssm send-command \
                                         --instance-ids ${instanceId} \
                                         --document-name "AWS-RunShellScript" \
-                                        --parameters 'commands=["cd /home/ubuntu/tf.docker && sudo docker-compose build && sleep 50 && sudo docker-compose up -d mysqldb && sleep 90 && sudo docker-compose up -d frontend_backend"]' \
+                                        --parameters 'commands=["cd /home/ubuntu/tf.docker && pwd && sudo docker-compose build && sleep 50 && sudo docker-compose up -d mysqldb && sleep 90 && sudo docker-compose up -d frontend_backend"]' \
                                         --region ${env.AWS_REGION}
                                 """
-                                sleep 160 // Adjust sleep time if necessary
+                                sleep 100 // Adjust sleep time if necessary
 
                             }
                         } else if (params.action == 'destroy') {
