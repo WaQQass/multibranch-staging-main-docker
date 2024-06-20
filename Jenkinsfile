@@ -95,8 +95,6 @@ pipeline {
                                     }
                                 }
 
-                                
-
                                 // Wait for the SSM command to complete
                                 sleep 30 // Adjust sleep time if necessary
 
@@ -117,25 +115,26 @@ pipeline {
 
                                 // Install docker and docker-compose
                                 echo "Installing docker and docker-compose on ${instanceId}"
-                                 sh   """
-                                        aws ssm send-command \
+                                sh """
+                                    aws ssm send-command \
                                         --instance-ids ${instanceId} \
                                         --document-name "AWS-RunShellScript" \
-                                        --parameters 'commands=["cd /home/ubuntu && pwd && sleep 50 && sudo apt insatall docker.io && sleep 90 && sudo apt install docker-compose -y "]' \
+                                        --parameters 'commands=["sudo apt-get update", "sudo apt-get install -y docker.io", "sudo apt-get install -y docker-compose"]' \
                                         --region ${env.AWS_REGION}
-                                      """
+                                """
 
-                                // Wait for the Ansible playbook to complete
+                                // Wait for the SSM command to complete
                                 sleep 160 // Adjust sleep time if necessary
-                              //run command for dockerbuid and up
-                              echo "build image and run command for run containers ${instanceId}"
-                                 sh   """
-                                        aws ssm send-command \
+
+                                // Run Docker build and up commands
+                                echo "Building image and running containers on ${instanceId}"
+                                sh """
+                                    aws ssm send-command \
                                         --instance-ids ${instanceId} \
                                         --document-name "AWS-RunShellScript" \
-                                        --parameters 'commands=["cd /home/ubuntu/tf.docker && pwd && sleep 5 && sudo docker-compose build . && sudo docker-compose-up -d mysqldb && sleep 90 && docker-compose-up -d frontend_backend"]' \
+                                        --parameters 'commands=["cd /home/ubuntu/tf.docker && sudo docker-compose build && sudo docker-compose up -d mysqldb && sleep 90 && sudo docker-compose up -d frontend_backend"]' \
                                         --region ${env.AWS_REGION}
-                                      """
+                                """
                             }
                         } else if (params.action == 'destroy') {
                             dir('terraform') {
