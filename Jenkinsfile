@@ -53,9 +53,7 @@ pipeline {
                             if (env.BRANCH_NAME == 'staging') {
                                 sh 'terraform plan -out=tfplan'
                                 sh 'terraform show -no-color tfplan > tfplan.txt'
-                                echo "Terraform Plan Output:"
-                                def planOutput = readFile 'terraform/tfplan.txt'
-                                echo "${planOutput}"
+                                
                             }
                         }
 
