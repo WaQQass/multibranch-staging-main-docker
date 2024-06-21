@@ -72,7 +72,9 @@ pipeline {
                             // Validate Docker Compose configuration
                             echo "Current directory: ${pwd()}"
                             sh 'ls -al'
-                            echo "Validating now Docker Compose configuration:"
+                          
+                            echo "Validating Docker Compose configuration nw:"
+
                             sh 'docker-compose -f docker-compose.yml config'
                         } else {
                             error "Invalid branch detected: ${env.BRANCH_NAME}"
