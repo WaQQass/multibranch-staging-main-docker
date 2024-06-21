@@ -59,19 +59,20 @@ pipeline {
                         // Apply / Destroy based on parameters and branch
                         if (env.BRANCH_NAME == 'main') {
                             if (params.action == 'apply') {
-                                if (!params.autoApprove) {
-                                    def plan = readFile 'terraform/tfplan.txt'
-                                    input message: "Do you want to apply the plan?",
-                                          parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
-                                }
                                 dir('terraform') {
+                                    sh 'terraform plan -out=tfplan' // Ensure a fresh plan is created
+                                    if (!params.autoApprove) {
+                                        def plan = readFile 'tfplan.txt'
+                                        input message: "Do you want to apply the plan?",
+                                              parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
+                                    }
                                     sh 'terraform apply -input=false tfplan'
                                     sleep 15 // Wait for 15 seconds to ensure instance creation
 
                                     // Capture the outputs
                                     def outputs = sh(script: 'terraform output -json', returnStdout: true).trim()
                                     echo "Terraform Outputs: ${outputs}"
-                                    writeFile file: 'terraform/outputs.json', text: outputs
+                                    writeFile file: 'outputs.json', text: outputs
 
                                     // Parse JSON output and set environment variables
                                     def outputJson = readJSON text: outputs
@@ -110,8 +111,7 @@ pipeline {
                                             aws ssm send-command \
                                                 --instance-ids ${instanceId} \
                                                 --document-name "AWS-RunShellScript" \
-                                                --parameters 'commands=["sudo apt-get install -y git", "git clone -b main https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/WaQQass/multibranch-staging-main-docker.git
- /home/ubuntu/multibranch-staging-main-docker"]' \
+                                                --parameters 'commands=["sudo apt-get install -y git", "git clone -b main https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/WaQQass/multibranch-staging-main-docker.git /home/ubuntu/multibranch-staging-main-docker"]' \
                                                 --region ${env.AWS_REGION}
                                         """
                                     }
@@ -156,7 +156,7 @@ pipeline {
                             echo "Current directory: ${pwd()}"
                             sh 'ls -al'
                           
-                            echo "Validating Docker Compose configuration nw:"
+                            echo "Validating Docker Compose configuration now:"
 
                             sh 'docker-compose -f docker-compose.yml config'
                         } else {
