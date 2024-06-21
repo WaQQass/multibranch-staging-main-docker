@@ -11,28 +11,7 @@ pipeline {
     }
 
     stages {
-        stage('Initialize') {
-            when {
-                branch 'main'
-            }
-            steps {
-                script {
-                    // Prompt for action (apply or destroy)
-                    input message: "Please choose an action to perform:",
-                          parameters: [
-                              choice(name: 'action', choices: ['apply', 'destroy'], description: 'Select the action to perform')
-                          ]
-                }
-            }
-        }
-
         stage('Deploy Infrastructure') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'staging'
-                }
-            }
             steps {
                 script {
                     // Assume Jenkins Role for the Terraform now
@@ -59,6 +38,12 @@ pipeline {
                         "AWS_SESSION_TOKEN=${awsSessionToken}"
                     ]) {
                         if (env.BRANCH_NAME == 'main') {
+                            // Prompt for action (apply or destroy)
+                            input message: "Please choose an action to perform:",
+                                  parameters: [
+                                      choice(name: 'action', choices: ['apply', 'destroy'], description: 'Select the action to perform')
+                                  ]
+                            
                             // Checkout the GitHub repository using Jenkins Git credentials
                             git credentialsId: 'git_lemp_new', url: 'https://github.com/WaQQass/multibranch-staging-main-docker.git', branch: 'main'
 
