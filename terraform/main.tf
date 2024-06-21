@@ -4,7 +4,7 @@ provider "aws" {
 
 # Define the IAM role for SSM managed instance core access
 resource "aws_iam_role" "ssm_role" {
-  name               = "SSMInstanceRolenew"
+  name               = "SSMInstanceRole"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -32,7 +32,7 @@ resource "aws_instance" "web" {
   instance_type = "t2.micro"
   key_name      = "california"
 
-  vpc_security_group_ids = [aws_security_group.allow_ssh_httpnew.id]
+  vpc_security_group_ids = [aws_security_group.allow_ssh_http.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name  # Attach IAM role to instance
 
   tags = {
@@ -42,13 +42,13 @@ resource "aws_instance" "web" {
 
 # Define IAM instance profile and attach to the EC2 instance
 resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "SSMInstanceProfilenew"
+  name = "SSMInstanceProfile"
   role = aws_iam_role.ssm_role.name
 }
 
 # Define the security group
-resource "aws_security_group" "allow_ssh_httpnew" {
-  name        = "allow_ssh_httpnew"
+resource "aws_security_group" "allow_ssh_http" {
+  name        = "allow_ssh_http"
   description = "Allow SSH and HTTP traffic"
 
   ingress {
@@ -79,6 +79,6 @@ resource "aws_security_group" "allow_ssh_httpnew" {
   }
 
   tags = {
-    Name = "allow_ssh_httpnew"
+    Name = "allow_ssh_http"
   }
 }
