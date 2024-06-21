@@ -156,12 +156,12 @@ pipeline {
                                 echo "Terraform Plan for Staging:"
                                 sh 'cat tfplan.txt'
 
-                                // Validate Docker Compose configuration
+                                // Validate Docker Compose configuration (root directory)
                                 echo "Current directory: ${pwd()}"
                                 sh 'ls -al'
-                            
+
                                 echo "Validating Docker Compose configuration now:"
-                                sh 'docker-compose -f docker-compose.yml config'
+                                sh 'docker-compose -f ../docker-compose.yml config'
                             }
                         } else {
                             error "Invalid branch detected: ${env.BRANCH_NAME}"
