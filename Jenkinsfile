@@ -57,8 +57,9 @@ pipeline {
                                 echo "Terraform Plan:"
                                 sh 'cat tfplan.txt'
 
-                                // Ask for apply confirmation if selected
+                                // Apply or Destroy based on user selection
                                 if (params.action == 'apply') {
+                                    // Ask for apply confirmation if not auto-approved
                                     if (!params.autoApprove) {
                                         def plan = readFile 'tfplan.txt'
                                         input message: "Do you want to apply the plan?",
@@ -140,6 +141,12 @@ pipeline {
                                             --region ${env.AWS_REGION}
                                     """
                                     sleep 100 // Adjust sleep time if necessary
+                                } else if (params.action == 'destroy') {
+                                    // Destroy infrastructure
+                                    sh 'terraform destroy --auto-approve'
+                                    echo "Infrastructure destroyed successfully."
+                                } else {
+                                    error "Invalid action selected: ${params.action}. Please choose either 'apply' or 'destroy'."
                                 }
                             }
                         } else if (env.BRANCH_NAME == 'staging') {
