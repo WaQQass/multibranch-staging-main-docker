@@ -79,6 +79,6 @@ resource "aws_security_group" "allow_ssh_httpnew" {
   }
 
   tags = {
-    Name = "allow_ssh_http"
+    Name = "allow_ssh_httpnew"
   }
 }
