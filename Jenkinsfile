@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'us-west-1' // Update with your AWS region
+        AWS_REGION = 'us-west-1' // Update with AWS region
         GIT_CREDENTIALS = credentials('git_lemp_new') // Jenkins credentials ID for Git
     }
 
