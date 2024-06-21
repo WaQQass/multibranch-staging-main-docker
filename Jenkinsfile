@@ -53,6 +53,10 @@ pipeline {
                                 sh 'terraform plan -out=tfplan'
                                 sh 'terraform show -no-color tfplan > tfplan.txt'
 
+                                // Display Terraform plan output
+                                echo "Terraform Plan:"
+                                sh 'cat tfplan.txt'
+
                                 // Ask for apply confirmation if selected
                                 if (params.action == 'apply') {
                                     if (!params.autoApprove) {
@@ -139,13 +143,26 @@ pipeline {
                                 }
                             }
                         } else if (env.BRANCH_NAME == 'staging') {
-                            // Validate Docker Compose configuration
-                            echo "Current directory: ${pwd()}"
-                            sh 'ls -al'
-                          
-                            echo "Validating Docker Compose configuration now:"
+                            // Checkout the GitHub repository using Jenkins Git credentials
+                            git credentialsId: 'git_lemp_new', url: 'https://github.com/WaQQass/multibranch-staging-main-docker.git', branch: 'staging'
 
-                            sh 'docker-compose -f docker-compose.yml config'
+                            // Terraform Init and Plan for Staging
+                            dir('terraform') {
+                                sh 'terraform init'
+                                sh 'terraform plan -out=tfplan'
+                                sh 'terraform show -no-color tfplan > tfplan.txt'
+
+                                // Display Terraform plan output for staging
+                                echo "Terraform Plan for Staging:"
+                                sh 'cat tfplan.txt'
+
+                                // Validate Docker Compose configuration
+                                echo "Current directory: ${pwd()}"
+                                sh 'ls -al'
+                            
+                                echo "Validating Docker Compose configuration now:"
+                                sh 'docker-compose -f docker-compose.yml config'
+                            }
                         } else {
                             error "Invalid branch detected: ${env.BRANCH_NAME}"
                         }
