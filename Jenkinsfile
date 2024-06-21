@@ -66,6 +66,10 @@ pipeline {
                                         input message: "Do you want to apply the plan?",
                                               parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
                                     }
+                                    input message: "Do you want to apply?",
+                                          ok: "Proceed with apply",
+                                          submitter: "user"
+
                                     sh 'terraform apply -input=false tfplan'
                                     sleep 15 // Wait for 15 seconds to ensure instance creation
 
@@ -146,6 +150,10 @@ pipeline {
                                 }
                             } else if (params.action == 'destroy') {
                                 dir('terraform') {
+                                    input message: "Do you want to destroy the infrastructure?",
+                                          ok: "Proceed with destroy",
+                                          submitter: "user"
+
                                     sh 'terraform destroy --auto-approve'
                                 }
                             } else {
