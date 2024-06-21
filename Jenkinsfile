@@ -58,15 +58,21 @@ pipeline {
 
                         // Apply / Destroy based on parameters and branch
                         if (env.BRANCH_NAME == 'main') {
-                            if (!params.autoApprove) {
-                                def plan = readFile 'terraform/tfplan.txt'
-                                input message: "Do you want to apply the plan?",
-                                      parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
-                            }
-                            dir('terraform') {
-                                sh 'terraform apply -input=false tfplan'
-                                // Additional steps after apply for main branch
-                                // Capture outputs, perform health checks, clone repo, install Docker, etc.
+                            if (params.action == 'apply') {
+                                if (!params.autoApprove) {
+                                    def plan = readFile 'terraform/tfplan.txt'
+                                    input message: "Do you want to apply the plan?",
+                                          parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
+                                }
+                                dir('terraform') {
+                                    sh 'terraform apply -input=false tfplan'
+                                    // Additional steps after apply for main branch
+                                    // Capture outputs, perform health checks, clone repo, install Docker, etc.
+                                }
+                            } else if (params.action == 'destroy') {
+                                dir('terraform') {
+                                    sh 'terraform destroy --auto-approve'
+                                }
                             }
                         } else if (env.BRANCH_NAME == 'staging') {
                             // Validate Docker Compose configuration
