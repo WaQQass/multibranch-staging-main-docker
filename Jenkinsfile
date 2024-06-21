@@ -39,10 +39,10 @@ pipeline {
                     ]) {
                         if (env.BRANCH_NAME == 'main') {
                             // Prompt for action (apply or destroy)
-                            input message: "Please choose an action to perform:",
-                                  parameters: [
-                                      choice(name: 'action', choices: ['apply', 'destroy'], description: 'Select the action to perform')
-                                  ]
+                            def userAction = input message: "Please choose an action to perform:",
+                                                  parameters: [
+                                                      choice(name: 'action', choices: ['apply', 'destroy'], description: 'Select the action to perform')
+                                                  ]
                             
                             // Checkout the GitHub repository using Jenkins Git credentials
                             git credentialsId: 'git_lemp_new', url: 'https://github.com/WaQQass/multibranch-staging-main-docker.git', branch: 'main'
@@ -58,7 +58,7 @@ pipeline {
                                 sh 'cat tfplan.txt'
 
                                 // Apply or Destroy based on user selection
-                                if (params.action == 'apply') {
+                                if (userAction == 'apply') {
                                     // Ask for apply confirmation if not auto-approved
                                     if (!params.autoApprove) {
                                         def plan = readFile 'tfplan.txt'
@@ -87,7 +87,7 @@ pipeline {
                                     timeout(time: 3, unit: 'MINUTES') {
                                         waitUntil {
                                             def statusCheck = sh(script: "aws ec2 describe-instance-status --instance-ids ${instanceId} --query 'InstanceStatuses[*].InstanceStatus.Status' --output text", returnStdout: true).trim()
-                                            def systemCheck = sh(script: "aws ec2 describe-instance-status --instance-ids ${instanceId} --query 'InstanceStatuses[*].SystemStatus.Status' --output text", returnStdout: true).trim()
+                                            def systemCheck = sh(script: "aws ec2.describe-instance-status --instance-ids ${instanceId} --query 'InstanceStatuses[*].SystemStatus.Status' --output text", returnStdout: true).trim()
 
                                             if (statusCheck == 'ok' && systemCheck == 'ok') {
                                                 echo "EC2 instance ${instanceId} passed both status checks."
@@ -141,12 +141,12 @@ pipeline {
                                             --region ${env.AWS_REGION}
                                     """
                                     sleep 100 // Adjust sleep time if necessary
-                                } else if (params.action == 'destroy') {
+                                } else if (userAction == 'destroy') {
                                     // Destroy infrastructure
                                     sh 'terraform destroy --auto-approve'
                                     echo "Infrastructure destroyed successfully."
                                 } else {
-                                    error "Invalid action selected: ${params.action}. Please choose either 'apply' or 'destroy'."
+                                    error "Invalid action selected: ${userAction}. Please choose either 'apply' or 'destroy'."
                                 }
                             }
                         } else if (env.BRANCH_NAME == 'staging') {
