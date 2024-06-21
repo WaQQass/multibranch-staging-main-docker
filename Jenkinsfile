@@ -111,7 +111,7 @@ pipeline {
                                                 --instance-ids ${instanceId} \
                                                 --document-name "AWS-RunShellScript" \
                                                 --parameters 'commands=["sudo apt-get install -y git", "git clone -b main https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/WaQQass/multibranch-staging-main-docker.git
- /home/ubuntu/tf.docker"]' \
+ /home/ubuntu/multibranch-staging-main-docker"]' \
                                                 --region ${env.AWS_REGION}
                                         """
                                     }
@@ -138,7 +138,7 @@ pipeline {
                                         aws ssm send-command \
                                             --instance-ids ${instanceId} \
                                             --document-name "AWS-RunShellScript" \
-                                            --parameters 'commands=["cd /home/ubuntu/tf.docker && pwd && sudo docker-compose build && sleep 50 && sudo docker-compose up -d mysqldb && sleep 90 && sudo docker-compose up -d frontend_backend"]' \
+                                            --parameters 'commands=["cd /home/ubuntu/multibranch-staging-main-docker && pwd && sudo docker-compose build && sleep 50 && sudo docker-compose up -d mysqldb && sleep 90 && sudo docker-compose up -d frontend_backend"]' \
                                             --region ${env.AWS_REGION}
                                     """
                                     sleep 100 // Adjust sleep time if necessary
