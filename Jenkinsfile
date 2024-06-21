@@ -53,7 +53,6 @@ pipeline {
                             if (env.BRANCH_NAME == 'staging') {
                                 sh 'terraform plan -out=tfplan'
                                 sh 'terraform show -no-color tfplan > tfplan.txt'
-                                
                             }
                         }
 
@@ -71,8 +70,10 @@ pipeline {
                             }
                         } else if (env.BRANCH_NAME == 'staging') {
                             // Validate Docker Compose configuration
+                            echo "Current directory: ${pwd()}"
+                            sh 'ls -al'
                             echo "Validating Docker Compose configuration:"
-                            sh 'docker-compose -f docker-compose.yml config -q'
+                            sh 'docker-compose -f docker-compose.yml config'
                         } else {
                             error "Invalid branch detected: ${env.BRANCH_NAME}"
                         }
