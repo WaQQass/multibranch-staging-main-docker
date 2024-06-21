@@ -21,7 +21,7 @@ pipeline {
             }
             steps {
                 script {
-                    // Assume Jenkins Role for Terraform now
+                    // Assume Jenkins Role for the Terraform now
                     def assumeRoleOutput = sh(
                         script: """
                             aws sts assume-role \\
