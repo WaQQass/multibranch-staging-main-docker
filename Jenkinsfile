@@ -2,23 +2,16 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = 'us-west-1' // Update with your AWS regionn
+        AWS_REGION = 'us-west-1' // Update with your AWS region
         GIT_CREDENTIALS = credentials('git_lemp_new') // Jenkins credentials ID for Git
     }
 
     parameters {
         booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
-        choice(name: 'action', choices: ['apply', 'destroy'], description: 'Select the action to perform')
     }
 
     stages {
         stage('Deploy Infrastructure') {
-            when {
-                anyOf {
-                    branch 'main'
-                    branch 'staging'
-                }
-            }
             steps {
                 script {
                     // Assume Jenkins Role for the Terraform now
@@ -44,23 +37,28 @@ pipeline {
                         "AWS_SECRET_ACCESS_KEY=${awsSecretAccessKey}",
                         "AWS_SESSION_TOKEN=${awsSessionToken}"
                     ]) {
-                        // Checkout the GitHub repository using Jenkins Git credentials
-                        git credentialsId: 'git_lemp_new', url: 'https://github.com/WaQQass/multibranch-staging-main-docker.git', branch: 'main'
+                        if (env.BRANCH_NAME == 'main') {
+                            // Prompt for action (apply or destroy)
+                            input message: "Please choose an action to perform:",
+                                  parameters: [
+                                      choice(name: 'action', choices: ['apply', 'destroy'], description: 'Select the action to perform')
+                                  ]
+                            
+                            // Checkout the GitHub repository using Jenkins Git credentials
+                            git credentialsId: 'git_lemp_new', url: 'https://github.com/WaQQass/multibranch-staging-main-docker.git', branch: 'main'
 
-                        // Terraform Init and Plan (for both staging and main)
-                        dir('terraform') {
-                            sh 'terraform init'
-                            if (env.BRANCH_NAME == 'staging') {
+                            // Terraform Init and Plan
+                            dir('terraform') {
+                                sh 'terraform init'
                                 sh 'terraform plan -out=tfplan'
                                 sh 'terraform show -no-color tfplan > tfplan.txt'
-                            }
-                        }
 
-                        // Apply / Destroy based on parameters and branch
-                        if (env.BRANCH_NAME == 'main') {
-                            if (params.action == 'apply') {
-                                dir('terraform') {
-                                    sh 'terraform plan -out=tfplan' // Ensure a fresh plan is created
+                                // Display Terraform plan output
+                                echo "Terraform Plan:"
+                                sh 'cat tfplan.txt'
+
+                                // Ask for apply confirmation if selected
+                                if (params.action == 'apply') {
                                     if (!params.autoApprove) {
                                         def plan = readFile 'tfplan.txt'
                                         input message: "Do you want to apply the plan?",
@@ -108,10 +106,10 @@ pipeline {
                                     echo "Cloning GitHub repository with credentials to instance ${instanceId}"
                                     withCredentials([usernamePassword(credentialsId: 'git_lemp_new', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
                                         sh """
-                                            aws ssm send-command \
-                                                --instance-ids ${instanceId} \
-                                                --document-name "AWS-RunShellScript" \
-                                                --parameters 'commands=["sudo apt-get install -y git", "git clone -b main https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/WaQQass/multibranch-staging-main-docker.git /home/ubuntu/multibranch-staging-main-docker"]' \
+                                            aws ssm send-command \\
+                                                --instance-ids ${instanceId} \\
+                                                --document-name "AWS-RunShellScript" \\
+                                                --parameters 'commands=["sudo apt-get install -y git", "git clone -b main https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/WaQQass/multibranch-staging-main-docker.git /home/ubuntu/multibranch-staging-main-docker"]' \\
                                                 --region ${env.AWS_REGION}
                                         """
                                     }
@@ -122,10 +120,10 @@ pipeline {
                                     // Install docker and docker-compose
                                     echo "Installing docker and docker-compose on ${instanceId}"
                                     sh """
-                                        aws ssm send-command \
-                                        --instance-ids ${instanceId} \
-                                        --document-name "AWS-RunShellScript" \
-                                        --parameters '{"commands":["sudo apt update -y", "sudo apt install docker.io -y", "sleep 10", "sudo curl -L https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m) -o /usr/local/bin/docker-compose", "sudo chmod +x /usr/local/bin/docker-compose", "sudo docker-compose --version"]}' \
+                                        aws ssm send-command \\
+                                        --instance-ids ${instanceId} \\
+                                        --document-name "AWS-RunShellScript" \\
+                                        --parameters '{"commands":["sudo apt update -y", "sudo apt install docker.io -y", "sleep 10", "sudo curl -L https://github.com/docker/compose/releases/download/1.29.2/docker-compose-\$(uname -s)-\$(uname -m) -o /usr/local/bin/docker-compose", "sudo chmod +x /usr/local/bin/docker-compose", "sudo docker-compose --version"]}' \\
                                         --region ${env.AWS_REGION}
                                     """
 
@@ -135,30 +133,36 @@ pipeline {
                                     // Run Docker build and up commands
                                     echo "Building image and running containers on ${instanceId}"
                                     sh """
-                                        aws ssm send-command \
-                                            --instance-ids ${instanceId} \
-                                            --document-name "AWS-RunShellScript" \
-                                            --parameters 'commands=["cd /home/ubuntu/multibranch-staging-main-docker && pwd && sudo docker-compose build && sleep 50 && sudo docker-compose up -d mysqldb && sleep 90 && sudo docker-compose up -d frontend_backend"]' \
+                                        aws ssm send-command \\
+                                            --instance-ids ${instanceId} \\
+                                            --document-name "AWS-RunShellScript" \\
+                                            --parameters 'commands=["cd /home/ubuntu/multibranch-staging-main-docker && pwd && sudo docker-compose build && sleep 50 && sudo docker-compose up -d mysqldb && sleep 90 && sudo docker-compose up -d frontend_backend"]' \\
                                             --region ${env.AWS_REGION}
                                     """
                                     sleep 100 // Adjust sleep time if necessary
-
                                 }
-                            } else if (params.action == 'destroy') {
-                                dir('terraform') {
-                                    sh 'terraform destroy --auto-approve'
-                                }
-                            } else {
-                                error "Invalid action selected. Please choose either 'apply' or 'destroy'."
                             }
                         } else if (env.BRANCH_NAME == 'staging') {
-                            // Validate Docker Compose configuration
-                            echo "Current directory: ${pwd()}"
-                            sh 'ls -al'
-                          
-                            echo "Validating Docker Compose configuration now:"
+                            // Checkout the GitHub repository using Jenkins Git credentials
+                            git credentialsId: 'git_lemp_new', url: 'https://github.com/WaQQass/multibranch-staging-main-docker.git', branch: 'staging'
 
-                            sh 'docker-compose -f docker-compose.yml config'
+                            // Terraform Init and Plan for Staging
+                            dir('terraform') {
+                                sh 'terraform init'
+                                sh 'terraform plan -out=tfplan'
+                                sh 'terraform show -no-color tfplan > tfplan.txt'
+
+                                // Display Terraform plan output for staging
+                                echo "Terraform Plan for Staging:"
+                                sh 'cat tfplan.txt'
+
+                                // Validate Docker Compose configuration (root directory)
+                                echo "Current directory: ${pwd()}"
+                                sh 'ls -al'
+
+                                echo "Validating Docker Compose configuration now:"
+                                sh 'docker-compose -f ../docker-compose.yml config'
+                            }
                         } else {
                             error "Invalid branch detected: ${env.BRANCH_NAME}"
                         }
